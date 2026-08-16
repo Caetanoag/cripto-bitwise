@@ -32,32 +32,43 @@ O objetivo deste projeto é ser um estudo de caso sobre como combinar várias t�
 ```
 CRIPTOGRAFIA
 ──────────────────────────────────────────────────────────────────────────
-mensagem + chave
-    │
-    ▼
-Gera IV aleatório (48 bytes hex) ──► hash = FNV-1a(key + iv, 100k iterações)
-    │
-    ▼
-Seeds do hash ► 4 geradores xorshift128 (rotação, lixo, números, tamanho do lixo)
-    │
-    ▼
-1. criptR(mensagem, xor128Rotation)
-   ► CBC + rotação bitwise + XOR ► lista de charCodes "embaralhados"
-    │
-    ▼
-2. criptT(lista, trashing, xor128Numbers)
-   ► converte para binário ► insere "lixo" aleatório nos bits ► achatamento
-    │
-    ▼
-3. criptTrashToString
-   ► binário ► hexadecimal
-    │
-    ▼
-4. gerarMAC(cifra, chave)
-   ► 32 caracteres hex de autenticação
-    │
-    ▼
-cifra - MAC - IV
+[ Mensagem ]              [ Chave ]
+     │                        │
+     │                        ▼
+     │            gerarInitializationVector()
+     │                        │
+     │                        ▼
+     └──────────────► gerarHash(Chave + IV)
+                     (FNV-1a / 100k iterações)
+                              │
+                              ▼
+                   startXorGenerators(IV)
+         ┌───────────────┬───────────────┬───────────────┐
+         ▼               ▼               ▼               ▼
+  xor128Trashing  xor128Rotation   xor128Size     xor128Numbers
+   (fatia 0-64)    (fatia 64-96)  (128-192)      (192-256)
+         │               │               │               │
+         │               ▼               │               │
+         │      1. criptR()              │               │
+         │      (CBC + Rotação + XOR)    │               │
+         │               │               │               │
+         └───────────────┼───────────────┴───────────────┤
+                         ▼                               │
+                2. criptT() ◄────────────────────────────┘
+                (Obfuscação por Lixo)
+                         │
+                         ▼
+                3. criptTrashToString() ───► [ Cifra Hex ]
+                                                    │
+                                                    ▼
+    [ Chave ] ─────────────────────────────► 4. gerarMAC()
+                                                    │
+                                                    ▼
+                                              [ MAC (32 hex) ]
+
+ ┌──────────────────────────────────────────────────────────────┐
+ │ RESULTADO FINAL: <cifra_hex>-<mac_32_hex>-<iv_48_hex>        │
+ └──────────────────────────────────────────────────────────────┘
 ```
 
 A descriptografia percorre o caminho inverso: primeiro verifica o MAC (em tempo constante) e, **somente se válido**, remove o lixo, reverte o CBC e recupera a mensagem.
