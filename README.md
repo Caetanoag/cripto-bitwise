@@ -30,7 +30,7 @@ O objetivo deste projeto é ser um estudo de caso sobre como combinar várias t�
 ## Visão geral do fluxo
 
 ```
-CRIPTOSRAFIAR
+CRIPTOGRAFIA
 ──────────────────────────────────────────────────────────────────────────
 mensagem + chave
     │
